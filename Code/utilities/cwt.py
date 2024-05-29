@@ -187,3 +187,17 @@ def transform_window(data,n_channels, samples_per_second, samples_per_subSample,
     return averaged_data
 
 
+def inverse_cwt(transform, scales, dj, dt, w0):
+    
+    if(w0 != 8 ):
+        print("err only w0 = 8 is implemented")
+    
+    scales_graph = scales[np.newaxis,:]
+
+
+    inverse = transform / np.sqrt(scales_graph.T)
+    inverse = np.squeeze(np.sum(inverse, axis=0))
+
+    colorado_factor = ((dj) *np.sqrt(dt)) / (.7511 * .5758)
+    inverse_w_factor = colorado_factor * inverse
+    return inverse_w_factor
