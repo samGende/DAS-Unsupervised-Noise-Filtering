@@ -60,7 +60,7 @@ def cwt_time_vec(signal, log_space, omega_0, dt, space=False):
 
 
 
-def cwt_space_vec(signal, log_space, omega_0, dt):
+def cwt_space_vec(signal, time_scales, omega_0, dt):
     """take the cwt across the channels of an array
 
     Args:
@@ -76,7 +76,8 @@ def cwt_space_vec(signal, log_space, omega_0, dt):
       log_space = np.array(log_space)
       signal = np.array(signal)
     #calculate the scales for cwt
-    scales = (log_space*(omega_0 + np.sqrt(2 + omega_0**2)))/ (4 * np.pi)
+    #scales = (log_space*(omega_0 + np.sqrt(2 + omega_0**2)))/ (4 * np.pi)
+    scales = time_scales
     #calculate angular frequencies
     angular_freq = ((2*np.pi * np.arange(signal.shape[1])) / (signal.shape[1]* dt))
     # reflect the second half of the array
@@ -113,7 +114,7 @@ def cwt_space_vec(signal, log_space, omega_0, dt):
     
 
 
-def transform_window(data,n_channels, samples_per_second, samples_per_subSample, space_log, time_log, freq_min=0.2, freq_max=24.0, w0=8, n_features=60
+def transform_window(data,n_channels, samples_per_second, samples_per_subSample, space_log, time_scales, freq_min=0.2, freq_max=24.0, w0=8, n_features=60
                      ,start_window=250, end_window=7750):
     """transform a window of data from stanford array 
 
@@ -170,7 +171,7 @@ def transform_window(data,n_channels, samples_per_second, samples_per_subSample,
     time_start = time.time()
     #for index, sample in enumerate(data_derivative):
     #    transformed_data[index, : , :30] = np.abs(cwt_space_vec(sample, time_log, w0, delta).T) 
-    transformed_data[:, : , :n_features//2] = np.abs(cwt_time_vec(data_derivative, time_log, w0, delta).T) 
+    transformed_data[:, : , :n_features//2] = np.abs(cwt_time_vec(data_derivative, time_scales, w0, delta).T) 
     time_end = time.time()
     print("time cwt took", time_end - time_start)
     
