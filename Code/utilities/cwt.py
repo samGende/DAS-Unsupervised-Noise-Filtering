@@ -59,9 +59,10 @@ def cwt_space_vec(signal, log_space, omega_0, dt):
     result = torch.fft.ifft(multiplied, dim=2)
     return result
 
-def transform_window(data, n_channels, samples_per_second, samples_per_subSample, space_log, time_scales, freq_min=0.2, freq_max=24.0, w0=8, n_features=60, start_window=250, end_window=7750):
+def transform_window(data, n_channels, samples_per_second, samples_per_subSample, space_log, time_scales, freq_min=0.2, freq_max=24.0, w0=8, start_window=250, end_window=7750, window_length=300, subsampling = True):
     n_samples = data.shape[1]
     delta = 1 / samples_per_second
+    n_features = len(space_log) + len(time_scales)
 
     data_derivative = torch.tensor(data[:, 1:] - data[:, :-1], dtype=torch.float32, device=device)
 
@@ -78,17 +79,20 @@ def transform_window(data, n_channels, samples_per_second, samples_per_subSample
     transformed_data = torch.empty((n_channels, n_samples - 1, n_features), dtype=torch.float32, device=device)
 
     space_start = time.time()
-    transformed_data[:, :, n_features // 2:] = torch.abs(cwt_space_vec(data_derivative.T.cpu().numpy(), space_log, w0, delta).T)
+    transformed_data[:, :, len(time_scales):] = cwt_space_vec(data_derivative.T.cpu().numpy(), space_log, w0, delta).T.real
     space_end = time.time()
     print("space cwt took", space_end - space_start)
 
     time_start = time.time()
-    transformed_data[:, :, :n_features // 2] = torch.abs(cwt_time_vec(data_derivative.cpu().numpy(), time_scales, w0, delta).T)
+    transformed_data[:, :, :len(time_scales)] = cwt_time_vec(data_derivative.cpu().numpy(), time_scales, w0, delta).T.real
     time_end = time.time()
     print("time cwt took", time_end - time_start)
-
-    reshaped_data = transformed_data[:, start_window:end_window, :].reshape(n_channels, 300, samples_per_subSample, n_features)
-    averaged_data = torch.mean(reshaped_data, dim=2)
+    
+    if(subsampling):
+        reshaped_data = transformed_data[:, start_window:end_window, :].reshape(n_channels,  window_length, samples_per_subSample, n_features)
+        averaged_data = torch.mean(reshaped_data, dim=2)
+    else:
+        averaged_data = transformed_data
     return averaged_data
 
 def inverse_cwt(transform, scales, dj, dt, w0):
