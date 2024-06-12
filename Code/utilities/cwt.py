@@ -6,31 +6,33 @@ from obspy.core.trace import Trace
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+def get_scales(dt,dj, w0, n_samples):
+    s0 = (2*dt* (w0 + np.sqrt(2 + w0))) / (4 *np.pi)
+    J = np.ceil((1/dj )* np.log2((n_samples) / s0))
+    scales = s0 * 2**(np.arange(J) *dj)
+    return scales
+
+
+
 def cwt_time_vec(signal, scales, omega_0, dt):
     signal = torch.tensor(signal, dtype=torch.float32, device=device)
-    print(f'signal shape is {signal.shape}')
     scales = torch.tensor(scales, dtype=torch.float32, device=device)
-    print(f'scales shape is {scales.shape}')
+    
     #scales = (log_space * (omega_0 + np.sqrt(2 + omega_0 ** 2))) / (4 * np.pi)
-    angular_freq = (2 * np.pi * torch.arange(signal.shape[1], device=device)) / (signal.shape[1] * dt)
-    angular_freq[(signal.shape[1] // 2):] *= -1
-    heavy_step = angular_freq > 0
+    angular_frequencies = (2 * np.pi * torch.arange(signal.shape[1], device=device)) / (signal.shape[1] * dt)
+    angular_frequencies[(signal.shape[1] // 2):] *= -1
+   
+    heavy_step = angular_frequencies > 0
 
     wavelet = torch.zeros((signal.shape[1], scales.shape[0]), dtype=torch.complex128, device=device)
     wavelet[heavy_step, :] = (torch.sqrt((scales * 2 * np.pi) / dt) * (np.pi ** -.25) * \
-                             torch.exp(-((torch.outer(angular_freq[heavy_step], scales) - omega_0) ** 2) / 2)).type(torch.complex128)
+                             torch.exp(-((torch.outer(angular_frequencies[heavy_step], scales) - omega_0) ** 2) / 2)).type(torch.complex128)
 
     signal -= torch.mean(signal, dim=1, keepdim=True)
     fft_signal = torch.fft.fft(signal, dim=1)
-    print(fft_signal.shape)
     
-    print(f'wavelet shape is {wavelet.shape}')
-    print(f'fft shape is {fft_signal.shape}')
-
     wavelet = wavelet[:, None, :]
     multiplied = wavelet.T * fft_signal[None,:, :]
-    
-   
     multiplied = multiplied.permute(0, 2, 1)
 
     result = torch.fft.ifft(multiplied, dim=1)
@@ -41,19 +43,19 @@ def cwt_space_vec(signal, log_space, omega_0, dt):
     log_space = torch.tensor(log_space, dtype=torch.float32, device=device)
 
     scales = (log_space * (omega_0 + np.sqrt(2 + omega_0 ** 2))) / (4 * np.pi)
-    angular_freq = (2 * np.pi * torch.arange(signal.shape[1], device=device)) / (signal.shape[1] * dt)
-    angular_freq[(signal.shape[1] // 2):] *= -1
-    heavy_step = angular_freq > 0
+    
+    angular_frequencies = (2 * np.pi * torch.arange(signal.shape[1], device=device)) / (signal.shape[1] * dt)
+    angular_frequencies[(signal.shape[1] // 2):] *= -1
+    heavy_step = angular_frequencies > 0
 
     wavelet = torch.zeros((signal.shape[1], scales.shape[0]), dtype=torch.complex128, device=device)
     wavelet[heavy_step, :] = (torch.sqrt((scales * 2 * np.pi) / dt) * (np.pi ** -.25) * \
-                             torch.exp(-((torch.outer(angular_freq[heavy_step], scales) - omega_0) ** 2) / 2)).type(torch.complex128)
+                             torch.exp(-((torch.outer(angular_frequencies[heavy_step], scales) - omega_0) ** 2) / 2)).type(torch.complex128)
 
     signal -= torch.mean(signal, dim=1, keepdim=True)
     fft_signal = torch.fft.fft(signal, dim=1)
 
     wavelet = wavelet[:, None, :]
-    print(wavelet.shape)
     multiplied = wavelet.T * fft_signal[None,:,:]
 
     result = torch.fft.ifft(multiplied, dim=2)
@@ -66,27 +68,19 @@ def transform_window(data, n_channels, samples_per_second, samples_per_subSample
 
     data_derivative = torch.tensor(data[:, 1:] - data[:, :-1], dtype=torch.float32, device=device)
 
-    filter_start = time.time()
     for channel in range(n_channels):
         trace = Trace(data=data_derivative[channel, :].cpu().numpy(), header={'delta': 1.0 / float(samples_per_second), 'sampling_rate': samples_per_second})
         trace = trace.filter("bandpass", freqmin=freq_min, freqmax=freq_max, corners=4, zerophase=True)
         data_derivative[channel, :] = torch.tensor(trace.data, dtype=torch.float32, device=device)
-    filter_end = time.time()
-    print("filter took", filter_end - filter_start)
 
     data_derivative = data_derivative - torch.median(data_derivative, dim=0).values
 
     transformed_data = torch.empty((n_channels, n_samples - 1, n_features), dtype=torch.float32, device=device)
 
-    space_start = time.time()
+    # add in torch.abs() and remove .real to recreate paper implementation
     transformed_data[:, :, len(time_scales):] = cwt_space_vec(data_derivative.T.cpu().numpy(), space_log, w0, delta).T.real
-    space_end = time.time()
-    print("space cwt took", space_end - space_start)
 
-    time_start = time.time()
     transformed_data[:, :, :len(time_scales)] = cwt_time_vec(data_derivative.cpu().numpy(), time_scales, w0, delta).T.real
-    time_end = time.time()
-    print("time cwt took", time_end - time_start)
     
     if(subsampling):
         reshaped_data = transformed_data[:, start_window:end_window, :].reshape(n_channels,  window_length, samples_per_subSample, n_features)
@@ -100,7 +94,7 @@ def inverse_cwt(transform, scales, dj, dt, w0):
         print("err only w0 = 8 is implemented")
 
     scales_graph = torch.tensor(scales, dtype=torch.float32, device=device).unsqueeze(0)
-    inverse = transform / torch.sqrt(scales_graph.T)
+    inverse = transform / torch.sqrt(scales_graph.T) + 10e-10 
     inverse = torch.sum(inverse, dim=0).squeeze()
 
     colorado_factor = (dj * torch.sqrt(torch.tensor(dt, dtype=torch.float32, device=device))) / (0.7511 * 0.5758)
