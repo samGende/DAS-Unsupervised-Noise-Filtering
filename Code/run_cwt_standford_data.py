@@ -15,6 +15,8 @@ def sub_sample(data):
     data =np.reshape(data, (data.shape[0], 25, -1))
     return np.mean(data, axis=1)
 
+
+#sorted_list = [ "20160905_06:17:54.npy"]
 #load one file to check n_channels and n_samples
 sample_data = np.load(sorted_list[0])
 
@@ -29,22 +31,21 @@ n_samples = sample_data.shape[1]
 
 n_channels = sample_data.shape[0]
 samples_per_second = 2
-samples_per_sub_sample = 1
+samples_per_sub_sample = 25
 space_log = np.logspace(np.log10(minSpaceFrq), np.log10(maxSpaceFrq), n_features)
 time_scales= cwt.get_scales(dt, dj, w0, n_samples)
 
 
 for file in sorted_list:
     data = np.load(DAS_data_directory + '/' + file)
+    #data = np.load(file)
     #take a 4 minute window 
     data = data[:, :12000]
-    #subsample to half a second 
-    data = sub_sample(data)
     
     sub_sample_data = False
 
 
-    transform = cwt.transform_window(data, n_channels, samples_per_second, samples_per_sub_sample, space_log, time_scales, subsampling=sub_sample_data)
+    transform = cwt.transform_window(data, n_channels, samples_per_second, samples_per_sub_sample, space_log, time_scales, start_window=0, end_window=11950, window_length=478)
 
     filename = file.split(".")[0]
-    np.save(out_dir + "/" + "cwt_" + filename, transform)
+    #np.save(out_dir + "/" + "cwt_" + filename, transform)
