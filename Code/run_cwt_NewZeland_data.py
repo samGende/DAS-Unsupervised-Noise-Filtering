@@ -37,6 +37,11 @@ samples_per_sub_sample = 25
 space_log = np.logspace(np.log10(minSpaceFrq), np.log10(maxSpaceFrq), n_features)
 time_scales= cwt.get_scales(dt, dj, w0, n_samples)
 
+start_window = 0 
+end_window= 11950
+window_length = 478
+
+cwt.save_cwt_info(sample_data.shape, samples_per_second, samples_per_sub_sample, space_log, time_scales, .2, 24, w0, start_window, end_window, window_length, True, sorted_list[0], sorted_list[-1])
 
 for file in sorted_list:
     data = np.load(DAS_data_directory + '/' + file)
@@ -47,7 +52,7 @@ for file in sorted_list:
     sub_sample_data = False
 
 
-    transform = cwt.transform_window(data, n_channels, samples_per_second, samples_per_sub_sample, space_log, time_scales, start_window=0, end_window=11950, window_length=478)
+    transform = cwt.transform_window(data, n_channels, samples_per_second, samples_per_sub_sample, space_log, time_scales, start_window=start_window, end_window=end_window, window_length=window_length)
 
     filename = file.split(".")[0]
     #np.save(out_dir + "/" + "cwt_" + filename, transform)
