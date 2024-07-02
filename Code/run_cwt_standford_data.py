@@ -3,10 +3,10 @@ import os
 import numpy as np
 
 #directory where DAS data is located 
-DAS_data_directory = "./DAS_data/05"
+DAS_data_directory = "../../DAS_data/05/05"
 
 #dir where transforms will be saved 
-out_dir = "CWT_4Min/09"
+out_dir = "CWT_4min/05SubSampled"
 file_list = os.listdir(DAS_data_directory)
 sorted_list = sorted(file_list)
 
@@ -18,7 +18,7 @@ def sub_sample(data):
 
 #sorted_list = [ "20160905_06:17:54.npy"]
 #load one file to check n_channels and n_samples
-sample_data = np.load(sorted_list[0])
+sample_data = np.load(DAS_data_directory + '/' + sorted_list[0])
 
 #parameters for cwt
 dt =0.5
@@ -48,4 +48,4 @@ for file in sorted_list:
     transform = cwt.transform_window(data, n_channels, samples_per_second, samples_per_sub_sample, space_log, time_scales, start_window=0, end_window=11950, window_length=478)
 
     filename = file.split(".")[0]
-    #np.save(out_dir + "/" + "cwt_" + filename, transform)
+    np.save(out_dir + "/" + "cwt_" + filename, transform)

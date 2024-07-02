@@ -1,16 +1,28 @@
 from utilities import cwt
+from utilities import DAS 
 import os
 import numpy as np
 
 #directory where DAS data is located 
-DAS_data_directory = "../../data/earthquakes/sissle/eq_data_50Hz"
+DAS_data_directory = "../../../data/earthquakes/sissle/eq_data_50Hz"
 
 #dir where transforms will be saved 
 out_dir = "CWT_NewZeland/"
 dir_list = os.listdir(DAS_data_directory)
-sorted_list = sorted(dir_list)
+#Last 5 files in data are not files with DAS data
+dir_list = sorted(dir_list)[1:-5]
 
-assert(0)
+print(len(dir_list))
+
+file_list = []
+for folder in dir_list:
+    files_in_folder = os.listdir(DAS_data_directory +'/'+ folder)
+    file_list.extend([folder+'/' + file for file in os.listdir(DAS_data_directory +'/'+ folder)])
+
+print(len(file_list))
+
+print(file_list[0])
+
 
 #sub sample 50hz data to 2hz data  
 def sub_sample(data):
@@ -20,7 +32,8 @@ def sub_sample(data):
 
 #sorted_list = [ "20160905_06:17:54.npy"]
 #load one file to check n_channels and n_samples
-sample_data = np.load(sorted_list[0])
+sample_data,_ = DAS.open_H5_file(DAS_data_directory +'/'+file_list[0])
+sample_data = sample_data.T
 
 #parameters for cwt
 dt =0.5
@@ -32,22 +45,24 @@ n_features = 30
 n_samples = sample_data.shape[1]
 
 n_channels = sample_data.shape[0]
-samples_per_second = 2
+samples_per_second = 50
 samples_per_sub_sample = 25
 space_log = np.logspace(np.log10(minSpaceFrq), np.log10(maxSpaceFrq), n_features)
 time_scales= cwt.get_scales(dt, dj, w0, n_samples)
 
-
-for file in sorted_list:
-    data = np.load(DAS_data_directory + '/' + file)
+count = 0
+transform_data = np.zeros((3704, 4*n_samples))
+for file in file_list:
+    data, start_time = DAS.open_H5_file(DAS_data_directory + '/' + file)
     #data = np.load(file)
     #take a 4 minute window 
-    data = data[:, :12000]
-    
-    sub_sample_data = False
+    transform_data[:, count*n_samples:(count+1)*n_samples] = data.T
+    if(count == 3):
+        transform = cwt.transform_window(transform_data, n_channels, samples_per_second, samples_per_sub_sample, space_log, time_scales, start_window=0, end_window=11950, window_length=478)
 
-
-    transform = cwt.transform_window(data, n_channels, samples_per_second, samples_per_sub_sample, space_log, time_scales, start_window=0, end_window=11950, window_length=478)
-
-    filename = file.split(".")[0]
-    #np.save(out_dir + "/" + "cwt_" + filename, transform)
+        filename = file.split("/")[0]
+        np.save(out_dir  + "cwt_" + filename, transform)
+        print(transform.shape)
+        count= 0
+    else:
+        count+=1

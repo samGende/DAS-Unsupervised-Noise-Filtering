@@ -17,27 +17,26 @@ from params_training import *
 
 
 
-srcChannelsStrings = ["35", "75"]
-nChannels = endCh - startCh + 1
 outfileList = []
-
+nChannels = 3704
 ndays = 1
-outfileListFile = outfileListFile[:-5]
+outfileListFile = []
 files = []
-n_features = 59
+n_features = 54
 sps = 50
 samplingRate = 25
 secondsPerWindowOffset = 239
 nSamples = secondsPerWindowOffset * int(sps / samplingRate)
-transform_dir = ("CWT_4min/05SubSampled")
+transform_dir = ("CWT_NewZeland")
 
 
 files = os.listdir(transform_dir)
 files.sort()
 print(files)
-files = files[:2]
+
 
 nfiles = len(files)
+
 
 trainingData = np.empty((nChannels, nSamples * nfiles, n_features), dtype=np.float64)
 
@@ -49,8 +48,7 @@ print("training data shape before reshape", trainingData.shape)
 trainingData = np.reshape(trainingData, (nChannels * nSamples * nfiles, -1))
 
 print("training data shape", trainingData.shape)
-assert(0)
-scaler = StandardScaler(copy=False).fit(trainingData)
+fscaler = StandardScaler(copy=False).fit(trainingData)
 trainingData = scaler.transform(trainingData)
 nClusters = 4
 # dump the scaler
