@@ -83,6 +83,7 @@ def transform_window(data, n_channels, samples_per_second, samples_per_subSample
 
     transformed_data[:, :, :len(time_scales)] = cwt_time_vec(data_derivative.cpu().numpy(), time_scales, w0, delta).T.real
     
+    print(transformed_data.shape)
     if(subsampling):
         reshaped_data = transformed_data[:, start_window:end_window, :].reshape(n_channels,  window_length, samples_per_subSample, n_features)
         averaged_data = torch.mean(reshaped_data, dim=2)
