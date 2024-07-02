@@ -1,6 +1,7 @@
 import time
 import os
 import torch
+import pickle
 import numpy as np
 from obspy.core.trace import Trace
 
@@ -101,3 +102,28 @@ def inverse_cwt(transform, scales, dj, dt, w0):
     colorado_factor = (dj * torch.sqrt(torch.tensor(dt, dtype=torch.float32, device=device))) / (0.7511 * 0.5758)
     inverse_w_factor = colorado_factor * inverse
     return inverse_w_factor.cpu().numpy()
+
+
+def save_cwt_info(data_shape, samples_per_second, samples_per_subSample, space_log, time_scales, freq_min, freq_max, w0, start_window, end_window, window_length, subsampling, start_file, end_file, filename):
+
+    cwt_info = {
+        "data_shape": data_shape,
+        "samples_per_second": samples_per_second,
+        "samples_per_subSample": samples_per_subSample,
+        "space_log": space_log,
+        "time_scales": time_scales,
+        "freq_min": freq_min,
+        "freq_max": freq_max,
+        "w0": w0,
+        "start_window": start_window,
+        "end_window": end_window,
+        "window_length": window_length,
+        "subsampling": subsampling,
+        "start_file": start_file,
+        "end_file": end_file
+    }
+    
+    # Pickle the dictionary
+    with open(filename + '.pkl', 'wb') as f:
+        pickle.dump(cwt_info, f)
+        f.close()

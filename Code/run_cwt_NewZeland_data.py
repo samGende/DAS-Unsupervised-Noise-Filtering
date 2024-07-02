@@ -59,10 +59,15 @@ for file in file_list:
     transform_data[:, count*n_samples:(count+1)*n_samples] = data.T
     if(count == 3):
         transform = cwt.transform_window(transform_data, n_channels, samples_per_second, samples_per_sub_sample, space_log, time_scales, start_window=0, end_window=11950, window_length=478)
+    filename = file.split("/")[0]
+    np.save(out_dir  + "cwt_" + filename, transform)
+    print(transform.shape)
+    count= 0
+    
+start_window = 0 
+end_window= 11950
+window_length = 478
 
-        filename = file.split("/")[0]
-        np.save(out_dir  + "cwt_" + filename, transform)
-        print(transform.shape)
-        count= 0
-    else:
-        count+=1
+cwt.save_cwt_info(sample_data.shape, samples_per_second, samples_per_sub_sample, space_log, time_scales, .2, 24, w0, start_window, end_window, window_length, True, sorted_list[0], sorted_list[-1])
+
+
