@@ -62,12 +62,17 @@ def cwt_space_vec(signal, log_space, omega_0, dt):
     result = torch.fft.ifft(multiplied, dim=2)
     return result
 
-def transform_window(data, n_channels, samples_per_second, samples_per_subSample, space_log, time_scales, freq_min=0.2, freq_max=24.0, w0=8, start_window=250, end_window=7750, window_length=300, subsampling = True):
+def transform_window(data, n_channels, samples_per_second, samples_per_subSample, space_log, time_scales, freq_min=0.2, freq_max=24.0, w0=8, start_window=250, end_window=7750, window_length=300, subsampling = True, derivative = True):
     n_samples = data.shape[1]
     delta = 1 / samples_per_second
     n_features = len(space_log) + len(time_scales)
 
-    data_derivative = torch.tensor(data[:, 1:] - data[:, :-1], dtype=torch.float32, device=device)
+    if(derivative):
+        data_derivative = torch.tensor(data[:, 1:] - data[:, :-1], dtype=torch.float32, device=device)
+    else:
+        #add one since we no longer take the derivative 
+        n_samples +=1
+        data_derivative = torch.tensor(data, dtype=torch.float32)
 
     for channel in range(n_channels):
         trace = Trace(data=data_derivative[channel, :].cpu().numpy(), header={'delta': 1.0 / float(samples_per_second), 'sampling_rate': samples_per_second})
@@ -92,6 +97,7 @@ def transform_window(data, n_channels, samples_per_second, samples_per_subSample
     return averaged_data
 
 def inverse_cwt(transform, scales, dj, dt, w0):
+    #shape of transform should be scales, samples 
     if w0 != 8:
         print("err only w0 = 8 is implemented")
 
