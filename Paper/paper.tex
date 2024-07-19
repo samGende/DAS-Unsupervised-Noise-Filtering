@@ -1,4 +1,6 @@
 \documentclass{article}
+\usepackage{natbib}
+\bibliographystyle{unsrtnat}
 \title{
 Fiber Optic Seismic Aquisition Using Unsupervised Learning}
 \author{Samuel Gende }
@@ -12,4 +14,31 @@ Fiber Optic Seismic Aquisition Using Unsupervised Learning}
 
 \paragraph{The original papers unsupervised machine learning technique has four main parts that need to be reimplemented, continuous wavelet transforms, clustering, filtering, and virtual-source response extraction. The first step is performing continuous wavelet transforms on the original signal collected by the DAS array to extract features for clustering. Half of the 60 CWT scale factors where computed on the time axis and the other half on the space axis. After extracting the features the authors then clustered the data using k-means with minibatch optimization. This resulted in 4 clusters one of which the authors identified as high frequency noise from automobiles. To filter out this noise on unseen data the authors performed CWTs on the data. Then muted the high frequency scales that seperated the noisy cluster from other clusters, and finally performed inverse CWTs to return to the original signal. The last step in the proccess was to extract the virtual response estimate, using 1-bit cross correlation. The convergene of the virtual source estimate was used to indicate wether the filtering was useful. If the virtual source estimate converges then the filtering resulted in a more repeatable signal. After these steps have been implemented and tested there is room to test different techniques of clustering, CWTs wavelets, and virtual source retrival. }
 
+\section{Methods and Background}
+
+\subsection{The Wavelet Transform}
+
+The wavelet transform has been called a mathmatical microscope as it offers a variable time and scale resolution, compared to other transforms \cite{Addison:2002} .
+This variable resolution comes by scaling and shifting a mother wavelt while convoluting it with the signal that is being transformed. 
+
+First it is important to define a wavelet, this is done by checking that a function a set of criteria. 
+The first of which is that a wavelet must have finite engergy. 
+This is defined as: 
+\begin{equation}\label{eq:example}
+    E = \int_{-\infty}^{\infty} |\psi(t)|^2dt < \infty
+\end{equation} 
+
+The second condition is that the wavelet has a zero mean. 
+This can be shown mathmaticaly with the admissibility condition $C_g$ where: 
+\begin{equation}
+    C_g = \int_{-\infty}^{\infty} \frac{|\hat{\psi}(f)|^2}{f} df < \infty
+\end{equation}
+
+Here $\hat{\psi(t)}$ represents the fourier transform of the wavelet. 
+Complex wavelets, such as the Morlet Wavelet must also satisfy the condition that the fourier transform is real and vanish for negative frequencies.
+These are also refered to analytic wavelets in varius literature
+
+\section{Methods}
+
+\bibliography{refs}
 \end{document}
