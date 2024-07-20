@@ -52,7 +52,7 @@ time_scales= cwt.get_scales(dt, dj, w0, n_samples)
 
 count = 0
 transform_data = np.zeros((3704, 4*n_samples))
-"""
+
 for file in file_list:
     data, start_time = DAS.open_H5_file(DAS_data_directory + '/' + file)
     #data = np.load(file)
@@ -66,7 +66,7 @@ for file in file_list:
     count= 0
     
 
-"""
+
 start_window = 0 
 end_window= 11950
 window_length = 478
