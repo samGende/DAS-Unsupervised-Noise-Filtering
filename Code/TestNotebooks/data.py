@@ -101,8 +101,11 @@ class SyntheticTrafficDAS(Dataset):
     
     def __getitem__(self, idx):
         
+        # sample DAS with shape channels by time
         sample = torch.zeros((self.nx, self.nt))
+        #earthquake strain rate is a randome length from 0 to strain rate 
         eq_strain_rate = self.eq_strain_rates[np.random.randint(0,len(self.eq_strain_rates))].clone()
+        #randomly flip or inverse the earthquake signal t
         if np.random.random() < 0.5:
             eq_strain_rate = torch.flip(eq_strain_rate, dims=(0,))
         if np.random.random() < 0.5:
@@ -111,14 +114,17 @@ class SyntheticTrafficDAS(Dataset):
         slowness = np.random.uniform(*self.eq_slowness)
         if np.random.random() < 0.5:
             slowness *= -1
+        #generate DAS with the modified strain rate 
         eq_das = generate_synthetic_das(eq_strain_rate, self.gauge, self.fs, slowness, nx=self.nx)
         idx = np.random.randint(0, 9000-self.nt+1)
         eq_das = eq_das[:,idx:idx+self.nt]
         
+        #signal to noise ratio ? 
         snr = 10 ** np.random.uniform(*self.log_SNR)  # log10-uniform distribution
         amp = 2 * np.sqrt(snr) / torch.abs(eq_das + 1e-10).max()
         eq_das *= amp
         
+        #add traffic either incoming or dec 
         if np.random.random() < 0.5:
             idx = np.random.randint(0, len(self.traffic_inc))
             start = np.random.randint(0, 512-self.nx+1)
@@ -133,6 +139,7 @@ class SyntheticTrafficDAS(Dataset):
         slowness = np.random.uniform(*self.traffic_slowness)
         traffic_das = shift_traffic_rates(traffic_rates, self.gauge, self.fs, direction*slowness)
         
+        #add second traffic noise 
         if np.random.random() < 0.5:
             if direction == 1:
                 idx = np.random.randint(0, len(self.traffic_dec))
@@ -151,6 +158,7 @@ class SyntheticTrafficDAS(Dataset):
         traffic_das = traffic_das[:,idx-gutter:idx+self.nt+gutter]
         traffic_das = torch.from_numpy(bandpass(traffic_das, 1.0, 10.0, self.fs, gutter).copy())
         
+        #add the two das patches together 
         sample = eq_das + traffic_das
         scale = sample.std(dim=-1, keepdim=True)
         sample /= scale        
