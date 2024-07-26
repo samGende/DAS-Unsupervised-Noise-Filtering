@@ -6,7 +6,7 @@ import numpy as np
 DAS_data_directory = "../../DAS_data/05/05"
 
 #dir where transforms will be saved 
-out_dir = "CWT_4min/05SubSampled"
+out_dir = "Data/CWT_4min/derivative_noSS"
 file_list = os.listdir(DAS_data_directory)
 sorted_list = sorted(file_list)
 
@@ -19,7 +19,6 @@ def sub_sample(data):
 #sorted_list = [ "20160905_06:17:54.npy"]
 #load one file to check n_channels and n_samples
 sample_data = np.load(DAS_data_directory + '/' + sorted_list[0])
-
 #parameters for cwt
 dt =0.5
 dj =0.5
@@ -30,8 +29,8 @@ n_features = 30
 n_samples = sample_data.shape[1]
 
 n_channels = sample_data.shape[0]
-samples_per_second = 2
-samples_per_sub_sample = 25
+samples_per_second = 50
+samples_per_sub_sample = 1
 space_log = np.logspace(np.log10(minSpaceFrq), np.log10(maxSpaceFrq), n_features)
 time_scales= cwt.get_scales(dt, dj, w0, n_samples)
 
@@ -39,7 +38,7 @@ start_window = 0
 end_window= 11950
 window_length = 478
 
-cwt.save_cwt_info(sample_data.shape, samples_per_second, samples_per_sub_sample, space_log, time_scales, .2, 24, w0, start_window, end_window, window_length, True, sorted_list[0], sorted_list[-1])
+cwt.save_cwt_info(sample_data.shape, samples_per_second, samples_per_sub_sample, space_log, time_scales, .2, 24, w0, start_window, end_window, window_length, True, sorted_list[0], sorted_list[-1], 'Data/CWT_4min/supports_inverse/cwt_infonoSS')
 
 
 for file in sorted_list:
@@ -51,7 +50,7 @@ for file in sorted_list:
     sub_sample_data = False
 
 
-    transform = cwt.transform_window(data, n_channels, samples_per_second, samples_per_sub_sample, space_log, time_scales, start_window=start_window, end_window=end_window, window_length=window_length)
+    transform = cwt.transform_window(data, n_channels, samples_per_second, samples_per_sub_sample, space_log, time_scales, subsampling=False, derivative=True)
 
     filename = file.split(".")[0]
-    np.save(out_dir + "/" + "cwt_" + filename, transform)
+    np.save(out_dir + "/" + "cwt_" + filename, transform.cpu())
