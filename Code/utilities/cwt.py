@@ -109,6 +109,27 @@ def inverse_cwt(transform, scales, dj, dt, w0):
     inverse_w_factor = colorado_factor * inverse
     return inverse_w_factor.cpu().numpy()
 
+def mute(transform, scales, mute_mask, scales_to_mute, dj, dt, w0, mute_level = 0.0001):
+    """
+    inputs 
+    transform: the cwt transform that will be muted shape is (channels, samples, scales)
+    scales: the scales used for the cwt 
+    mute_mask: locations in the DAS that where itentified as noise and should be muted
+    scales_to_mute: the scales that will be set to mute level and muted out
+    dj: dj param used for invese cwt
+    dt: dt param used for inverse cwt 
+    w0: w0 param used for inverse cwt
+    """
+    muted_inverse = np.empty((transform.shape[0], transform.shape[1]))
+
+    mute = np.ones(scales.shape)
+    mute[np.ma.make_mask(scales_to_mute)] = mute_level
+ 
+    transform[mute_mask,:] *= mute.astype(np.float32)
+
+    for i in range(transform.shape[0]):
+        muted_inverse[i, :] = inverse_cwt(transform[i].T ,scales, dj, dt, w0)
+    return muted_inverse
 
 def save_cwt_info(data_shape, samples_per_second, samples_per_subSample, space_log, time_scales, freq_min, freq_max, w0, start_window, end_window, window_length, subsampling, start_file, end_file, filename):
 
