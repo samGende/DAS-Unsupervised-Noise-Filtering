@@ -5,7 +5,7 @@ import pickle
 import numpy as np
 from obspy.core.trace import Trace
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
 
 def get_scales(dt,dj, w0, n_samples):
     s0 = (2*dt* (w0 + np.sqrt(2 + w0))) / (4 *np.pi)
@@ -57,12 +57,13 @@ def cwt_space_vec(signal, log_space, omega_0, dt):
     fft_signal = torch.fft.fft(signal, dim=1)
 
     wavelet = wavelet[:, None, :]
-    multiplied = wavelet.T * fft_signal[None,:,:]
+    multiplied = wavelet.permute(2,1,0) * fft_signal[None,:,:]
 
     result = torch.fft.ifft(multiplied, dim=2)
     return result
 
 def transform_window(data, n_channels, samples_per_second, samples_per_subSample, space_log, time_scales, freq_min=0.2, freq_max=24.0, w0=8, start_window=250, end_window=7750, window_length=300, subsampling = True, derivative = True):
+    print(device)
     n_samples = data.shape[1]
     delta = 1 / samples_per_second
     n_features = len(space_log) + len(time_scales)
