@@ -24,6 +24,8 @@ def open_H5_file(file_path):
 
 def one_bit_cross_cor(source, reciever, offset):
     offset
+    n_samples = source.shape[0]
     source_ones = np.sign(source)
     reciever_ones= np.sign(reciever)
-    return np.sum(source_ones[:-offset][-1] * reciever_ones[offset:], axis=0)
+    conv = source_ones[:n_samples-offset] * reciever_ones[:,offset:]
+    return np.sum(conv, axis=1)
