@@ -59,6 +59,10 @@ for index, file in enumerate(files):
 print("training data shape before reshape", trainingData.shape)
 # Clustering
 trainingData = np.reshape(trainingData, (nChannels * nSamples * nfiles, -1))
+
+scaler = StandardScaler(copy=False).fit(trainingData)
+trainingData = scaler.transform(trainingData)
+
 print(trainingData.shape)
 
 kmeans = KMeans(init='k-means++', n_clusters=3, n_init=10)

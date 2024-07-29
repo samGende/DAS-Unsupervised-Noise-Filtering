@@ -38,7 +38,7 @@ start_window = 0
 end_window= 11950
 window_length = 478
 
-cwt.save_cwt_info(sample_data.shape, samples_per_second, samples_per_sub_sample, space_log, time_scales, .2, 24, w0, start_window, end_window, window_length, True, sorted_list[0], sorted_list[-1], 'Data/CWT_4min/supports_inverse/cwt_infonoSS')
+#wt.save_cwt_info(sample_data.shape, samples_per_second, samples_per_sub_sample, space_log, time_scales, .2, 24, w0, start_window, end_window, window_length, True, sorted_list[0], sorted_list[-1], 'Data/CWT_4min/supports_inverse/cwt_infonoSS')
 
 
 for file in sorted_list:

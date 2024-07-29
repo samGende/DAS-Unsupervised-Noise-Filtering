@@ -10,22 +10,23 @@ device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
 print(device)
 
 
-dir = './Data/CWT_NZ_NOSUB'
-out_dir ='./Data/clusterResults/NZ_NOSUB'
+dir = './Data/CWT_4min/CWTNZ_Dt_SS'
+out_dir ='./Data/clusterResults/'
 
 sample = torch.tensor(np.load(f'{dir}/cwt_2023p152354.npy'))
 sample = sample.to(device)
 print(f'samples device is {sample.device}')
 files = os.listdir(dir)
 files.sort()
+files = files[:25]
 print(files)
 print(f'{len(files)} files in directory')
 
 
 #info for loading files
-samples_per_subsample = 25
+#samples_per_subsample = 25
 nChannels = sample.shape[0]
-nSamples = sample.shape[1]//samples_per_subsample
+nSamples = sample.shape[1]
 n_features = sample.shape[2]
 nfiles = len(files)
 
@@ -33,7 +34,6 @@ nfiles = len(files)
 trainingData = np.empty((nChannels, nSamples * nfiles, n_features), dtype=np.float64)
 print(trainingData.shape)
 print(nfiles)
-assert(0)
 for index, file in enumerate(files):
   file = dir + '/' + file
   trainingData[:,(index * nSamples):((index + 1) * nSamples),:] = np.load(file)
@@ -63,5 +63,5 @@ labels, centers = kmeans.fit_predict(trainingData)
 print(labels.shape)
 print(centers.shape)
 
-torch.save(labels, f'{out_dir}/gpuKmeans_labels')
-torch.save(centers, f'{out_dir}/gpuKmeans_centers')
+torch.save(labels, f'{out_dir}/gpuKmeansNZ_Dt_SS_labels')
+torch.save(centers, f'{out_dir}/gpuKmeansNZ_Dt_SS_centers')

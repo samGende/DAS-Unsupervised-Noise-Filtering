@@ -2,12 +2,13 @@ from utilities import cwt
 from utilities import DAS 
 import os
 import numpy as np
+import tqdm
 
 #directory where DAS data is located 
 DAS_data_directory = "../../../data/earthquakes/sissle/eq_data_50Hz"
 
 #dir where transforms will be saved 
-out_dir = "./Data/CWT_NZ_NOSUB/"
+out_dir = "./Data/CWT_4min/CWTNZ_Dt_SS/"
 dir_list = os.listdir(DAS_data_directory)
 #Last 5 files in data are not files with DAS data
 dir_list = sorted(dir_list)[1:-5]
@@ -60,11 +61,11 @@ for file in file_list:
     #take a 4 minute window 
     transform_data[:, count*n_samples:(count+1)*n_samples] = data.T
     if(count == 3):
-        print(data.shape)
-        transform = cwt.transform_window(transform_data, n_channels, samples_per_second, samples_per_sub_sample, space_log, time_scales, start_window=0, end_window=11950, window_length=478, subsampling = False, derivative = False)
+        print(transform_data.shape)
+        transform = cwt.transform_window(transform_data, n_channels, samples_per_second, samples_per_sub_sample, space_log, time_scales, start_window=0, end_window=11950, window_length=478, subsampling = True, derivative = True)
+        print(transform.shape)
         filename = file.split("/")[0]
         np.save(out_dir  + "cwt_" + filename, transform)
-        print(transform.shape)
         count= 0
     else:
         count+=1
