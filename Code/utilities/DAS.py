@@ -21,3 +21,11 @@ def open_H5_file(file_path):
     tmp = file_path.split('.h5')[0].split('/')[-1].split('_')[2:5]  #a bit convoluted. 
     start_datetime = datetime.datetime.strptime(tmp[1] + ' ' + tmp[2],'%Y%m%d %H%M%S.%f')  # in datetime
     return DAS_data, start_datetime
+
+def one_bit_cross_cor(source, reciever, offset):
+    offset
+    n_samples = source.shape[0]
+    source_ones = np.sign(source)
+    reciever_ones= np.sign(reciever)
+    conv = source_ones[:n_samples-offset] * reciever_ones[:,offset:]
+    return np.sum(conv, axis=1)
