@@ -28,7 +28,7 @@ files = files[:20]
 #info for loading files
 samples_per_subsample = 25
 nChannels = sample.shape[0]
-nSamples = sample.shape[1]//samples_per_subsample
+nSamples = sample.shape[1]
 n_features = sample.shape[2]
 nfiles = len(files)
 
@@ -36,7 +36,6 @@ nfiles = len(files)
 trainingData = np.empty((nChannels, nSamples * nfiles, n_features), dtype=np.float64)
 print(trainingData.shape)
 print(nfiles)
-assert(0)
 for index, file in enumerate(files):
   file = dir + '/' + file
   trainingData[:,(index * nSamples):((index + 1) * nSamples),:] = np.load(file)
@@ -47,9 +46,9 @@ trainingData = np.reshape(trainingData, (nChannels * nSamples * nfiles, -1))
 trainingData= torch.tensor(trainingData).float().to(device)
 
 print(f'training data is now loaded on {trainingData.device}')
-print(trainingData.dtype)
+print(trainingData.shape)
 
-AE = Autoencoder_v1(10)
+AE = Autoencoder_v1(10, sample.shape[2])
 
 # specify loss function
 criterion = nn.MSELoss()
@@ -58,12 +57,15 @@ criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(AE.parameters(), lr=0.001)
 
 # number of epochs to train the model
-n_epochs = 50
+n_epochs = 100 
 losses = np.zeros(n_epochs)
 
-batch_size = 1000
+batch_size = 1048 
 
-batched_data = torch.reshape(trainingData, (-1, batch_size, trainingData[1]))
+batches = trainingData.shape[0] // batch_size
+
+batched_data = torch.reshape(trainingData[:batches*batch_size], (batches, batch_size, sample.shape[2]))
+print(batched_data.shape)
 
 #move model and data to device 
 AE.to(device)
@@ -100,5 +102,5 @@ for epoch in range(1, n_epochs+1):
         ))
     
 AE.to('cpu')
-torch.save(AE.nn, 'NZ_Dt_SS_AEv1.nn')
+torch.save(AE, 'NZ_Dt_SS_AEv1.nn')
 np.save(losses, 'NZ_Dt_SS_AEv1_losses.npy')

@@ -1,6 +1,6 @@
 import torch.nn as nn
 import torch.nn.functional as F
-
+import torch
 
 class Autoencoder_v1(nn.Module):
     def __init__(self, encoding_dim, input_dim):
