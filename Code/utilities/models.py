@@ -41,3 +41,8 @@ class Autoencoder_v1(nn.Module):
         if(not torch.is_tensor(x)):
             x = torch.tensor(x, dtype=torch.float32)
         return self.encoder(x)
+    
+    def decode(self, x):
+        if(not torch.is_tensor(x)):
+            x = torch.tensor(x, dtype=torch.float32)
+        return self.decoder(x)
