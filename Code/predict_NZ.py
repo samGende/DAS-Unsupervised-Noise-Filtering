@@ -8,6 +8,12 @@ import matplotlib.colors as mcolors
 import os
 
 
+if torch.cuda.is_available():
+    print(f"GPU: {torch.cuda.get_device_name(2)} is available.")
+else:
+    print("No GPU available. Training will run on CPU.")
+device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
+print(device)
 
 
 
@@ -57,16 +63,16 @@ time_scales= cwt.get_scales(dt, dj, w0, n_samples)
 n_clusters = 3
 kmeans = KMeans(n_clusters, distance='euclidean')
 #Load clustering from the training Data
-centers = torch.load('../Data/supports_inverse/gpuKmeansNZ_Dt_SS_centers', map_location='cpu').float()
-labels = torch.load('../Data/supports_inverse/gpuKmeansNZ_Dt_SS_labels', map_location='cpu')
+centers = torch.load('./Data/clusterResults/gpuKmeansNZ_Dt_SS_centers', map_location='cpu').float().to(device)
+labels = torch.load('./Data/clusterResults/gpuKmeansNZ_Dt_SS_labels', map_location='cpu').to(device)
 'Clustering is of the first 25 files'
 
 
 #Decide what scales to Mute
 n_scales_muted = 6
 
-differences = np.abs(centers[0,:time_scales.shape[0]] - centers[1,:time_scales.shape[0]])
-rank = np.argsort(differences)
+differences = torch.abs(centers[0,:time_scales.shape[0]] - centers[1,:time_scales.shape[0]])
+rank = np.argsort(differences.detach().cpu().numpy())
 
 print(f'differences in time scales of centers {differences[rank][-n_scales_muted:]}')
 
@@ -77,7 +83,7 @@ scales_to_mute[rank[-n_scales_muted:]] = 1
 for index, transform in enumerate(trainingData):
     #get the prediction from the k-means centers
     flatt_features = transform.reshape(transform.shape[0] * transform.shape[1], -1)
-    flatt_labels = kmeans.predict(torch.tensor(flatt_features).float(), centers.float(), distance='euclidean').detach().numpy()
+    flatt_labels = kmeans.predict(torch.tensor(flatt_features).float().to(device), centers, distance='euclidean').detach().cpu().numpy()
     labels= np.reshape(flatt_labels, (transform.shape[0], transform.shape[1]))
     car_clusters = [0,2]
     flatt_mask = np.isin(flatt_labels, car_clusters)
@@ -95,6 +101,6 @@ for index, transform in enumerate(trainingData):
     ax1.set_title(" DAS Inverse with mute")
     ax2.set_title("Normal Inverse")
     plt.tight_layout()
-    plt.savefig(f'{out_dir}/{files[index]}_plot')
-    np.save(f'{out_dir}/{files[index]}_invers.npy')
-    np.save(f'{out_dir}/{files[index]}_muted.npy')
+    plt.savefig(f'{out_dir}/{files[index]}_plot', format='png')
+    np.save(f'{out_dir}/{files[index]}_invers.npy', inverse)
+    np.save(f'{out_dir}/{files[index]}_muted.npy', muted_inverse)
