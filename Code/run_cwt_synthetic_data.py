@@ -14,14 +14,22 @@ n_samples = 3000
 
 sample = torch.load(DAS_Directory +'/' +file_list[0])[:,:n_samples]
 print(sample.shape)
+assert(0)
 
 #parameters for cwt
-dt =0.02
+dt =0.5
 dj =0.5
 w0 =8
 minSpaceFrq = 0.002
 maxSpaceFrq = 0.12
 n_features = 30
+n_samples = sample.shape[1]
+
+n_channels = sample.shape[0]
+samples_per_second = 50
+samples_per_sub_sample = 25
+space_log = np.logspace(np.log10(minSpaceFrq), np.log10(maxSpaceFrq), n_features)
+time_scales= cwt.get_scales(dt, dj, w0, n_samples)
 
 
 n_channels = sample.shape[0]
@@ -40,5 +48,7 @@ for index, file in tqdm(enumerate(file_list)):
     transform2 = cwt.transform_window(sample2, n_channels, samples_per_second, samples_per_sub_sample, space_log, time_scales, start_window=0, end_window=n_channels, window_length=n_samples, subsampling = False, derivative = False)
     torch.save(transform1, transform_dir +'/'+ f'transform{index:04d}_window1.pt')
     torch.save(transform2, transform_dir +'/'+ f'transform{index:04d}_window2.pt')
+    if(index == 34):
+        break
 
 
