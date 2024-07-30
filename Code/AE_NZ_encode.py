@@ -16,8 +16,8 @@ print(device)
 
 
 
-dir = '../Data/CWT_4min/CWTNZ_Dt_SS'
-out_dir = '../Data/CWT_4min/encoded_CWT_Dt_SS'
+dir = './Data/CWT_4min/CWTNZ_Dt_SS'
+out_dir = './Data/CWT_4min/encoded_CWT_Dt_SS'
 
 sample = torch.tensor(np.load(f'{dir}/cwt_2023p152354.npy'))
 sample = sample.to(device)

@@ -60,7 +60,7 @@ optimizer = torch.optim.Adam(AE.parameters(), lr=0.001)
 n_epochs = 100 
 losses = np.zeros(n_epochs)
 
-batch_size = 1048 
+batch_size = 32 
 
 batches = trainingData.shape[0] // batch_size
 
@@ -79,19 +79,18 @@ for epoch in range(1, n_epochs+1):
     # train the model #
     ###################
     for data in batched_data:
-        features = torch.tensor(data, dtype=torch.float32)
         # clear the gradients of all optimized variables
         optimizer.zero_grad()
         # forward pass: compute predicted outputs by passing inputs to the model
-        outputs = AE(features)
+        outputs = AE(data)
         # calculate the loss
-        loss = criterion(outputs, features)
+        loss = criterion(outputs, data)
         # backward pass: compute gradient of the loss with respect to model parameters
         loss.backward()
         # perform a single optimization step (parameter update)
         optimizer.step()
         # update running training loss
-        train_loss += loss.item()*features.size(0)
+        train_loss += loss.item()
             
     # print avg training statistics 
     train_loss = train_loss/len(batched_data)
@@ -102,5 +101,5 @@ for epoch in range(1, n_epochs+1):
         ))
     
 AE.to('cpu')
-torch.save(AE, 'NZ_Dt_SS_AEv1.nn')
-np.save(losses, 'NZ_Dt_SS_AEv1_losses.npy')
+torch.save(AE.state_dict(), 'NZ_Dt_SS_AEv2.nn')
+np.save('NZ_Dt_SS_AEv1_losses.npy', losses)
