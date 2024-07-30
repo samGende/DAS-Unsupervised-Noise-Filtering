@@ -101,8 +101,10 @@ def inverse_cwt(transform, scales, dj, dt, w0):
     #shape of transform should be scales, samples 
     if w0 != 8:
         print("err only w0 = 8 is implemented")
+    
 
     scales_graph = torch.tensor(scales, dtype=torch.float32, device=device).unsqueeze(0)
+    transform = torch.tensor(transform, dtype=torch.float32, device=device)
     inverse = transform / torch.sqrt(scales_graph.T) + 10e-10 
     inverse = torch.sum(inverse, dim=0).squeeze()
 
