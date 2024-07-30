@@ -9,19 +9,20 @@ else:
 device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
 print(device)
 
-type = 'subsampled'
+type = 'nosubsampled'
 dir = f'./Data/synthetic-DAS/train-syntheticDAS/CWT-edDAS/{type}'
 out_dir ='./Data/clusterResults/'
 
-sample = torch.tensor(np.load(f'{dir}/cwt_2023p152354.npy'))
-sample = sample.to(device)
-print(f'samples device is {sample.device}')
 files = os.listdir(dir)
 files.sort()
 files = files[:25]
 print(files)
 print(f'{len(files)} files in directory')
 
+sample = torch.load(f'{dir}/{files[0]}')
+sample = sample.to(device)
+print(f'samples device is {sample.device}')
+print(sample.shape)
 
 #info for loading files
 #samples_per_subsample = 25
@@ -31,17 +32,21 @@ n_features = sample.shape[2]
 nfiles = len(files)
 
 #load files 
-trainingData = np.empty((nChannels, nSamples * nfiles, n_features), dtype=np.float64)
+trainingData = torch.empty((nChannels, nSamples * nfiles, n_features), dtype=torch.float64)
 print(trainingData.shape)
 print(nfiles)
 for index, file in enumerate(files):
   file = dir + '/' + file
-  trainingData[:,(index * nSamples):((index + 1) * nSamples),:] = np.load(file)
-print("training data shape before reshape", trainingData.shape)
+  trainingData[:,(index * nSamples):((index + 1) * nSamples),:] = torch.load(file)
 
 # Reshape data and push to device  
-trainingData = np.reshape(trainingData, (nChannels * nSamples * nfiles, -1))
-trainingData= torch.tensor(trainingData).float().to(device)
+trainingData = torch.reshape(trainingData, (nChannels * nSamples * nfiles, -1)).float().to(device)
+
+print("training data shape after reshape", trainingData.shape)
+
+#subsample for when data is to large
+if(trainingData.shape[0] >= 70000000):
+    trainingData = trainingData[::2,:]
 
 print(f'training data is now loaded on {trainingData.device}')
 print(trainingData.dtype)
