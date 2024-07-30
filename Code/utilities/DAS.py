@@ -14,7 +14,8 @@ def open_H5_file(file_path):
 
     DAS_data = f_in['DAS'][:]
     length = DAS_data.shape[1]
-    DAS_data = DAS_data[:, 81:]
+    # channels betwee 81 and 4978 are at distances from interigator of 0 to 20km
+    DAS_data = DAS_data[:, 81:4978]
     DAS_data = DAS_data[:,0:length:2]
     
     # creating time stamp
