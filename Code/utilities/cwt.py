@@ -110,6 +110,13 @@ def inverse_cwt(transform, scales, dj, dt, w0):
     inverse_w_factor = colorado_factor * inverse
     return inverse_w_factor.cpu().numpy()
 
+def inverse_DAS(transform, scales ,dj, dt, w0):
+    inverse = np.zeros((transform.shape[0], transform.shape[1]))
+    for i in range(transform.shape[0]):
+        inverse[i,:] = inverse_cwt(transform[i,:,:len(scales)].T, scales, dj, dt, w0)
+    return inverse
+        
+
 def mute(transform, scales, mute_mask, scales_to_mute, dj, dt, w0, mute_level = 0.0001):
     """
     inputs 
@@ -121,6 +128,7 @@ def mute(transform, scales, mute_mask, scales_to_mute, dj, dt, w0, mute_level = 
     dt: dt param used for inverse cwt 
     w0: w0 param used for inverse cwt
     """
+    transform = np.copy(transform)
     muted_inverse = np.empty((transform.shape[0], transform.shape[1]))
 
     mute = np.ones(scales.shape)
