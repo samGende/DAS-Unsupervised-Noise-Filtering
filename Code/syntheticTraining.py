@@ -1,74 +1,67 @@
+import torch
+import numpy as np 
 import os
-os.environ['MKL_NUM_THREADS'] = "4"
-os.environ["OMP_NUM_THREADS"] = "4" # export OMP_NUM_THREADS=4
-os.environ["OPENBLAS_NUM_THREADS"] = "4" # export OPENBLAS_NUM_THREADS=4 
-import numpy as np
-import datetime as dt
-import struct
-import sys
-import time
-from sklearn.preprocessing import StandardScaler
-from sklearn.cluster import KMeans
-from sklearn.cluster import AgglomerativeClustering as AggloCluster
-from utilities import clusters
-import joblib
-import torch 
+from kmeans_gpu import KMeans
+if torch.cuda.is_available():
+    print(f"GPU: {torch.cuda.get_device_name(2)} is available.")
+else:
+    print("No GPU available. Training will run on CPU.")
+device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
+print(device)
 
+type = 'subsampled'
+dir = f'./Data/synthetic-DAS/train-syntheticDAS/CWT-edDAS/{type}'
+out_dir ='./Data/clusterResults/'
 
-from params_training import *
-
-
-
-
-outfileList = []
-
-ndays = 1
-outfileListFile = []
-files = []
-
-transform_dir = ("Data/synthetic-DAS/train-syntheticDAS/CWT-edDAS")
-
-
-files = os.listdir(transform_dir)
+sample = torch.tensor(np.load(f'{dir}/cwt_2023p152354.npy'))
+sample = sample.to(device)
+print(f'samples device is {sample.device}')
+files = os.listdir(dir)
 files.sort()
-files=files[:100]
+files = files[:25]
+print(files)
+print(f'{len(files)} files in directory')
 
 
-nfiles = len(files)
-print(files[-1])
-sample = torch.load(transform_dir + '/' + files[-1])
-print(sample.shape)
-
-n_features = sample.shape[2]
-sps = 50
-samplingRate = 50
-secondsPerWindowOffset = sample.shape[1]
+#info for loading files
+#samples_per_subsample = 25
 nChannels = sample.shape[0]
-nSamples = secondsPerWindowOffset * int(sps / samplingRate)
-nSamples = nSamples //2
-print(nSamples)
+nSamples = sample.shape[1]
+n_features = sample.shape[2]
+nfiles = len(files)
 
+#load files 
 trainingData = np.empty((nChannels, nSamples * nfiles, n_features), dtype=np.float64)
-print(nfiles)
-
-dir = 'Data/synthetic-DAS/train-syntheticDAS/ClusteringResults'
-
-for index, file in enumerate(files):
-  file = transform_dir + '/' + file
-  trainingData[:,(index * nSamples):((index + 1) * nSamples),:] = np.array(torch.load(file))[:,::2, :]
-print("training data shape before reshape", trainingData.shape)
-# Clustering
-trainingData = np.reshape(trainingData, (nChannels * nSamples * nfiles, -1))
-
-scaler = StandardScaler(copy=False).fit(trainingData)
-trainingData = scaler.transform(trainingData)
-
 print(trainingData.shape)
+print(nfiles)
+for index, file in enumerate(files):
+  file = dir + '/' + file
+  trainingData[:,(index * nSamples):((index + 1) * nSamples),:] = np.load(file)
+print("training data shape before reshape", trainingData.shape)
 
-kmeans = KMeans(init='k-means++', n_clusters=3, n_init=10)
-kmeans.fit(trainingData)
-    
-data_labels = kmeans.labels_
-  
-np.save(f'{dir}/Trainingcluster_labels_k=3', data_labels)
-np.save(f'{dir}/Trainingcluster_centers_k=3', kmeans.cluster_centers_)
+# Reshape data and push to device  
+trainingData = np.reshape(trainingData, (nChannels * nSamples * nfiles, -1))
+trainingData= torch.tensor(trainingData).float().to(device)
+
+print(f'training data is now loaded on {trainingData.device}')
+print(trainingData.dtype)
+#Setup kmeans 
+
+n_clusters = 3
+
+kmeans = KMeans(
+    n_clusters=n_clusters,
+    max_iter=1000,
+    tolerance=1e-4,
+    distance='euclidean',
+    sub_sampling=None,
+    max_neighbors=15,
+)
+
+labels, centers = kmeans.fit_predict(trainingData)
+
+print(labels.shape)
+print(centers.shape)
+
+torch.save(labels, f'{out_dir}/gpuKmeansSynth_Dt_{type}_labels')
+torch.save(centers, f'{out_dir}/gpuKmeansSynth_Dt_{type}_centers')
