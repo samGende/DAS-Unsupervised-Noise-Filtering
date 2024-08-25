@@ -31,19 +31,11 @@ def one_bit_cross_cor(source, reciever, offset):
     conv = source_ones[:n_samples-offset] * reciever_ones[:,offset:]
     return np.sum(conv, axis=1)
 
-
-def zero_time_lag_cross_cor(channel_a, channel_b):
-    return np.sum(channel_a * channel_b)
-
 def semblance(DAS_sample):
-    sum = 0
-    divisor = 0
-    for i in range(DAS_sample.shape[0]):
-        divisor += zero_time_lag_cross_cor(DAS_sample[i], DAS_sample[i])
-        for j in range(DAS_sample.shape[0]):
-            sum += zero_time_lag_cross_cor(DAS_sample[i], DAS_sample[j])
-    DAS_sample.shape[0] * divisor
-    return sum / divisor
+    n_channels = DAS_sample.shape[0]
+    square_sum = np.sum(np.sum(DAS_sample, axis=0)**2, axis=0)
+    sum_squares = np.sum(np.sum((DAS_sample**2), axis=0), axis=0)
+    return square_sum/ (n_channels * sum_squares)
 
 def SNR_sem(DAS_sample):
     s = semblance(DAS_Stanford)
