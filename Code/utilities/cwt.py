@@ -5,7 +5,7 @@ import pickle
 import numpy as np
 from obspy.core.trace import Trace
 
-device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu" if torch.cuda.is_available() else "cpu")
 
 def get_scales(dt,dj, w0, n_samples):
     s0 = (2*dt* (w0 + np.sqrt(2 + w0))) / (4 *np.pi)
