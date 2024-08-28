@@ -88,9 +88,9 @@ def transform_window(data, n_channels, samples_per_second, samples_per_subSample
     transformed_data = torch.empty((n_channels, n_samples - 1, n_features), dtype=torch.float32, device=device)
 
     # add in torch.abs() and remove .real to recreate paper implementation
-    transformed_data[:, :, len(time_scales):] = cwt_space_vec(data_derivative.T.cpu().numpy(), space_log, w0, delta).T.real
+    transformed_data[:, :, len(time_scales):] = torch.abs(cwt_space_vec(data_derivative.T.cpu().numpy(), space_log, w0, delta).T)
 
-    transformed_data[:, :, :len(time_scales)] = cwt_time_vec(data_derivative.cpu().numpy(), time_scales, w0, delta).T.real
+    transformed_data[:, :, :len(time_scales)] = torch.abs(cwt_time_vec(data_derivative.cpu().numpy(), time_scales, w0, delta).T)
     
     print(transformed_data.shape)
     if(subsampling):
@@ -140,6 +140,33 @@ def mute(transform, scales, mute_mask, scales_to_mute, dj, dt, w0, mute_level = 
     mute[np.ma.make_mask(scales_to_mute)] = mute_level
  
     transform[mute_mask,:] *= mute.astype(np.float32)
+
+    for i in range(transform.shape[0]):
+        muted_inverse[i, :] = inverse_cwt(transform[i].T ,scales, dj, dt, w0)
+    return muted_inverse
+
+def smooth_mute(transform, scales, mute_mask, scales_to_mute, dj, dt, w0):
+    """
+    inputs 
+    transform: the cwt transform that will be muted shape is (channels, samples, scales)
+    scales: the scales used for the cwt 
+    mute_mask: locations in the DAS that where itentified as noise and should be muted
+    scales_to_mute: the scales that will be set to mute level and muted out
+    dj: dj param used for invese cwt
+    dt: dt param used for inverse cwt 
+    w0: w0 param used for inverse cwt
+    """
+    transform = np.copy(transform)
+    muted_inverse = np.empty((transform.shape[0], transform.shape[1]))
+
+    mute = np.ones(scales.shape)
+    mute = np.outer(mute_mask, scales_to_mute)
+    mute = mute.reshape(transform.shape)
+    scales_to_mute = np.abs(1-scales_to_mute).astype(int)
+    mute[:,:, scales_to_mute] = 1.0
+
+ 
+    transform *= mute.astype(np.float32)
 
     for i in range(transform.shape[0]):
         muted_inverse[i, :] = inverse_cwt(transform[i].T ,scales, dj, dt, w0)
