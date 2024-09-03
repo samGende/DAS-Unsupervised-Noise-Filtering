@@ -3,7 +3,7 @@ import torch.nn.functional as F
 from torch.nn import Module
 import torch
 import complexPyTorch.complexFunctions as complexFunctions
-from complexPyTorch.complexLayers import ComplexLinear, ComplexReLU
+from complexPyTorch.complexLayers import ComplexLinear, ComplexReLU, NaiveComplexBatchNorm1d, ComplexDropout
 from complexPyTorch.complexFunctions import complex_relu
 
 
@@ -128,17 +128,23 @@ class Autoencoder_v3(nn.Module):
         ## encoder ##
         self.encoder = nn.Sequential(
             ComplexLinear(input_dim, 32),
+            NaiveComplexBatchNorm1d(32),
             ComplexReLU(),
+            ComplexDropout(0.2),
             ComplexTanh(),
             ComplexLinear(32, 16),
+            NaiveComplexBatchNorm1d(16),
             ComplexTanh(),
+            ComplexDropout(0.2),
             ComplexLinear(16, encoding_dim)
         )
         ## decoder ##
         self.decoder =   self.decoder = nn.Sequential(
             ComplexLinear(encoding_dim, 16),
+            NaiveComplexBatchNorm1d(16),
             ComplexTanh(),
             ComplexLinear(16, 32),
+            NaiveComplexBatchNorm1d(32),
             ComplexTanh(),
             ComplexLinear(32,input_dim),
             ComplexSigmoid()
@@ -151,7 +157,7 @@ class Autoencoder_v3(nn.Module):
         # and scale the *output* layer with a sigmoid activation function
 
         # pass x into encoder
-        out = complex_relu(self.encoder(x))
+        out = self.encoder(x)
         # pass out into decoder
         out = self.decoder(out)
 
