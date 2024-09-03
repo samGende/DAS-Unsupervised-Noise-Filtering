@@ -3,7 +3,7 @@ import torch.nn.functional as F
 from torch.nn import Module
 import torch
 import complexPyTorch.complexFunctions as complexFunctions
-from complexPyTorch.complexLayers import ComplexLinear, ComplexReLU, NaiveComplexBatchNorm1d, ComplexDropout
+from complexPyTorch.complexLayers import ComplexLinear, ComplexReLU, NaiveComplexBatchNorm1d, ComplexDropout, ComplexConv2d
 from complexPyTorch.complexFunctions import complex_relu
 
 
@@ -171,4 +171,38 @@ class Autoencoder_v3(nn.Module):
     def decode(self, x):
         if(not torch.is_tensor(x)):
             x = torch.tensor(x, dtype=torch.complex64)
+        return self.decoder(x)
+    
+
+class DAS_AutoEncoder(nn.Module):
+    def __init__(self):
+        super(DAS_AutoEncoder, self).__init__()
+        
+        # Encoder
+        self.encoder = nn.Sequential(
+            nn.Conv2d(in_channels=60, out_channels=32, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(in_channels=32, out_channels=16, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(in_channels=16, out_channels=10, kernel_size=3, stride=1, padding=1)
+        )
+        
+        # Decoder
+        self.decoder = nn.Sequential(
+            nn.ConvTranspose2d(in_channels=10, out_channels=16, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.ConvTranspose2d(in_channels=16, out_channels=32, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.ConvTranspose2d(in_channels=32, out_channels=60, kernel_size=3, stride=1, padding=1)
+        )
+    
+    def forward(self, x):
+        x = self.encoder(x)
+        x = self.decoder(x)
+        return x
+    
+    def encode(self, x):
+        return self.encoder(x)
+    
+    def decode(self,x):
         return self.decoder(x)
